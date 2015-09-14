@@ -1,0 +1,145 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../dynamic-element/dynamic-element.html">
+
+<dom-module id="mapping-element">
+  <style>
+    .container{
+      width: 90%;
+    }
+    .card{
+      background-color: #FFFFFF;
+      width: 100%;
+      padding: 10px;
+    }
+    .card-content{
+      width: 100%;
+    }
+  </style>
+  <template>
+    <dynamic-element id="dym"></dynamic-element>
+    <div class="container">
+      <div id="cardMapping" class="card">
+        <div id="cardContent"></div>
+        <div hidden$="{{isShowMenu}}"><hr>
+          <paper-button id="btnBack" on-click="_handleBack">BACK</paper-button>
+          <paper-button id="btnNext" on-click="_handleNext">NEXT</paper-button>
+        </div>
+      </div>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'mapping-element',
+    properties: {
+      elements: Array,
+      isShowMenu: {
+        type: Boolean,
+        value: false
+      },
+      mapping: Array
+    },
+    ready: function() {
+  	  this.elements = [
+  	    { 'link':'../bower_components/classroom-manager/classroom-manager-ui.html',
+  	      'name':'cmui',
+  	      'attributes':''
+  	    },
+  	    { 'link':'elements/host-person.html',
+  	      'name':'hperson',
+  	      'attributes':''
+  	    }
+  	  ];
+  	  this.mapping = [
+  	    { 'from':'cmui',
+  	      'to':'hperson',
+  	      'map':[
+  	        
+  	      ]
+  	    }
+  	  ];
+  	  this._initElement();
+    },
+    _initElement: function(){
+      var poly = this;
+      for(var i = 0; i < this.elements.length; i++){
+        var ele = this.$.dym.addElement(this.$.cardContent, this.elements[i].link, 
+          this.elements[i].name, this.elements[i].attributes);
+        
+        if(i < (this.elements.length-1)){
+          var element = this.elements[i];
+          var tag = this.elements[i].link.split('/').pop().split('.html')[0];
+          ele.addEventListener(tag + '-success', function (e) {
+            if(e.detail.event == 'save'){
+              poly._handleMapping(element.name, e.detail);
+            }
+          });
+        }
+      }
+      this._startWork();
+    },
+    _handleMapping: function(from, detail){
+      for(var i = 0; i < this.mapping.length; i++){
+        if(this.mapping[i].from == from){
+          var nodes = this.$.cardContent.childNodes;
+          for(var j = 0; j < nodes.length; j++){
+            if(nodes[j].hidden == false && j < (nodes.length-1)){ // current element
+              if(nodes[j+1].name == this.mapping[i].to){
+                var maps = this.mapping[i].map;
+                for(var k = 0; k < maps.length; k++){
+                  // transfer value to next element
+                  nodes[j+1][maps[k].toKey] = detail[maps[k].fromKey];
+                }
+              }
+              break;
+            }
+          }
+        }
+      }
+      this._handleNext();
+    },
+    _startWork: function(){
+      var nodes = this.$.cardContent.childNodes;
+      for(var i = 0; i < nodes.length; i++){
+        if(i == 0){
+          nodes[i].hidden = false;
+        }
+        else{
+          nodes[i].hidden = true;
+        }
+      }
+    },
+    _handleNext: function(){
+      var nodes = this.$.cardContent.childNodes;
+      for(var i = 0; i < nodes.length; i++){
+        if(nodes[i].hidden == false && i < (nodes.length-1)){
+          nodes[i].hidden = true;
+          nodes[i+1].hidden = false;
+          break;
+        }
+      }
+      this._checkButton((i+1) == (nodes.length-1));
+    },
+    _handleBack: function(){
+      var nodes = this.$.cardContent.childNodes;
+      for(var i = 0; i < nodes.length; i++){
+        if(nodes[i].hidden == false && i > 0){
+          nodes[i].hidden = true;
+          nodes[i-1].hidden = false;
+          break;
+        }
+      }
+      this._checkButton(false);
+    },
+    _checkButton: function(isLastItem){
+      if(isLastItem){
+        this.$.btnNext.hidden = true;
+      }
+      else{
+        this.$.btnNext.hidden = false;
+      }
+    }
+  });
+</script>
